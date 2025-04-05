@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Streak - Gambling Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap">
+  <style>
+    body {
+      font-family: 'Special Elite', monospace;
+      background-color: #121212;
+      color: #eee;
+      text-align: center;
+      padding: 40px;
+    }
+    h1 {
+      color: #f2c94c;
+      font-size: 2.5em;
+    }
+    .stat {
+      font-size: 1.2em;
+      margin: 10px 0;
+    }
+    .positive { color: #27ae60; }
+    .negative { color: #e74c3c; }
+    button {
+      background-color: #f2c94c;
+      color: #121212;
+      border: none;
+      padding: 10px 20px;
+      font-size: 1em;
+      margin: 10px;
+      cursor: pointer;
+      border-radius: 6px;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    button:hover {
+      background-color: #d4af37;
+    }
+    #reels {
+      font-size: 3em;
+      margin: 20px 0;
+      letter-spacing: 20px;
+      height: 80px;
+    }
+    .reel {
+      display: inline-block;
+      width: 1em;
+    }
+    #message {
+      margin-top: 20px;
+      font-size: 1.2em;
+      font-weight: bold;
+      min-height: 50px;
+    }
+    #quitContainer {
+      margin-top: 40px;
+      font-size: 1.2em;
+    }
+    #reflection {
+      margin-top: 30px;
+      background: #1e1e1e;
+      padding: 20px;
+      border: 2px solid #f2c94c;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="intro">
+    <h1>The Streak</h1>
+    <p>A serious game about the illusion of control in gambling.</p>
+    <p>Before you begin, tell us a bit about yourself.</p>
+    <label>How often do you gamble?</label><br>
+    <select id="habit">
+      <option value="rarely">Rarely</option>
+      <option value="sometimes">Sometimes</option>
+      <option value="frequently">Frequently</option>
+    </select><br><br>
+    <label>If you lost €100 today, what would you do?</label><br>
+    <select id="reaction">
+      <option value="stop">Stop immediately</option>
+      <option value="try">Try once more</option>
+      <option value="double">Double down to recover</option>
+    </select><br><br>
+    <label>How much control do you feel you have when gambling?</label><br>
+    <select id="control">
+      <option value="none">None</option>
+      <option value="some">Some</option>
+      <option value="a lot">A lot</option>
+    </select><br><br>
+    <label>If you won €10,000 today, what would you do?</label><br>
+    <select id="dream">
+      <option value="save">Save it</option>
+      <option value="spend">Buy something big</option>
+      <option value="gamble">Try to win more</option>
+    </select><br><br>
+    <button onclick="startGame()">Start Game</button>
+  </div>
+  <main id="game" style="display:none;">
+    <h1>The Streak</h1>
+    <p class="subtitle">Can you stop before it’s too late?</p>
+    <div class="stat">💰 Balance: <span id="balance" class="positive">€100</span></div>
+    <div class="stat">💸 Loan: <span id="loan" class="negative">€0</span></div>
+    <label for="bet">How much would you like to bet?</label>
+    <input type="number" id="bet" min="10" step="10" value="10" />
+    <div id="reels">
+      <span class="reel" id="reel1">🍒</span>
+      <span class="reel" id="reel2">🍋</span>
+      <span class="reel" id="reel3">🍊</span>
+    </div>
+    <div id="buttons">
+      <button id="spinButton" onclick="spin()">Spin</button>
+      <button id="loanButton" onclick="takeLoan()" style="display: none;">Take Loan (€100)</button>
+      <button onclick="quitGame()">Quit Game</button>
+    </div>
+    <div id="message">🎰 The game is starting...</div>
+    <div id="quitContainer"></div>
+  </main>
+  <script>
+    const emojis = ["🍒", "🍋", "🍊", "🍇", "⭐", "💎"];
+    let balance = 100;
+    let loan = 0;
+    let spins = 0;
+    let guaranteedWins = 3;
+
+    function startGame() {
+      document.getElementById("intro").style.display = "none";
+      document.getElementById("game").style.display = "block";
+      updateUI();
+    }
+
+    function updateUI(message = "") {
+      document.getElementById("balance").textContent = `€${balance}`;
+      document.getElementById("loan").textContent = `€${loan}`;
+      document.getElementById("balance").className = balance >= 0 ? "positive" : "negative";
+      document.getElementById("loan").className = loan > 0 ? "negative" : "positive";
+      const bet = parseInt(document.getElementById("bet").value);
+      if (balance < bet || balance < 10) {
+        document.getElementById("loanButton").style.display = "inline-block";
+        document.getElementById("spinButton").style.display = "none";
+      } else {
+        document.getElementById("loanButton").style.display = "none";
+        document.getElementById("spinButton").style.display = "inline-block";
+      }
+      if (message) {
+        document.getElementById("message").innerHTML = message;
+      }
+    }
+
+    function getRandomEmoji() {
+      return emojis[Math.floor(Math.random() * emojis.length)];
+    }
+
+    function animateSlots(callback, finalEmojis) {
+      let frames = 10;
+      let count = 0;
+      const interval = setInterval(() => {
+        document.getElementById("reel1").textContent = getRandomEmoji();
+        document.getElementById("reel2").textContent = getRandomEmoji();
+        document.getElementById("reel3").textContent = getRandomEmoji();
+        count++;
+        if (count >= frames) {
+          clearInterval(interval);
+          document.getElementById("reel1").textContent = finalEmojis[0];
+          document.getElementById("reel2").textContent = finalEmojis[1];
+          document.getElementById("reel3").textContent = finalEmojis[2];
+          callback();
+        }
+      }, 100);
+    }
+
+    function spin() {
+      const bet = parseInt(document.getElementById("bet").value);
+      if (balance < bet || bet < 10) return;
+      spins++;
+      balance -= bet;
+
+      let result = [getRandomEmoji(), getRandomEmoji(), getRandomEmoji()];
+      let match = false;
+
+      if (guaranteedWins > 0) {
+        const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+        result = [emoji, emoji, emoji];
+        match = true;
+        guaranteedWins--;
+      } else if (result[0] === result[1] && result[1] === result[2]) {
+        match = true;
+      }
+
+      animateSlots(() => {
+        if (match) {
+          const winAmount = bet * 5;
+          balance += winAmount;
+          updateUI(`🎉 JACKPOT! You matched and won €${winAmount}! You're such a good player!`);
+        } else {
+          updateUI(`😢 No match. You lost €${bet}. I'm sure you can win it back!`);
+        }
+      }, result);
+    }
+
+    function takeLoan() {
+      loan += 100;
+      balance += 100;
+      updateUI(`💰 You took a loan of €100.`);
+    }
+
+    function quitGame() {
+      const loss = balance - (100 + loan);
+      const summary = loss < 0
+        ? `<p>Total money lost: <strong class="negative">€${Math.abs(loss)}</strong></p>`
+        : `<p>Total money won: <strong class="positive">€${Math.abs(loss)}</strong></p>`;
+
+      document.getElementById("quitContainer").innerHTML = `
+        <div id="reflection">
+          <h3>Game Over</h3>
+          <p>You ended with a balance of <strong>€${balance}</strong> and a loan of <strong>€${loan}</strong>.</p>
+          ${summary}
+          <p>You played ${spins} times.</p>
+          <p><em>How do your expectations compare to your outcome?</em></p>
+        </div>`;
+    }
+  </script>
+</body>
+</html>
